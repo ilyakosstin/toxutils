@@ -1,6 +1,6 @@
 package ru.coffeetox.toxutils.service;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.apache.commons.logging.Log;import org.apache.commons.logging.LogFactory;import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
@@ -10,6 +10,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 import ru.coffeetox.toxutils.auth.ToxUser;
+import ru.coffeetox.toxutils.dto.fs.FileDirectoryCompactDto;
+import ru.coffeetox.toxutils.dto.fs.FileDirectoryFullDto;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,7 +20,7 @@ import java.util.UUID;
 
 @Service
 public class FsInteractionService {
-    private final RestClient fsRestClient;
+    private static final Log log = LogFactory.getLog(FsInteractionService.class);private final RestClient fsRestClient;
 
     public FsInteractionService(
             @Qualifier("fsRestClient") RestClient fsRestClient
@@ -35,6 +37,7 @@ public class FsInteractionService {
         };
     }
 
+
     public UUID createDirectory(ToxUser user, String name, boolean isPublic, List<MultipartFile> files) throws Exception {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
@@ -45,8 +48,10 @@ public class FsInteractionService {
             body.add("files", forwardMultipartFile(file));
         }
 
+        String uri = user == null? "/directory" : "/directory/for/" + user.getUserId();
+
         Map<String, Object> directoryInfo = fsRestClient.post()
-                .uri("/directory/for/" + user.getUserId())
+                .uri(uri)
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body)
                 .retrieve()
@@ -66,8 +71,10 @@ public class FsInteractionService {
             body.add("files", forwardMultipartFile(file));
         }
 
+        String uri = user == null? "/upload/to/" + directoryId : "/upload/to/" + directoryId + "/for/" + user.getUserId();
+
         List<Map<String, Object>> fileMetadata = fsRestClient.post()
-                .uri("/upload/to/" + directoryId + "/for/" + user.getUserId())
+                .uri(uri)
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(body)
                 .retrieve()
@@ -80,6 +87,26 @@ public class FsInteractionService {
         return fileMetadata.stream()
                 .map(m -> UUID.fromString((String)m.get("id")))
                 .toList();
+    }
+
+    public Map<UUID, FileDirectoryCompactDto> populateDirectoriesCompact(List<UUID> ids) {
+        return fsRestClient.get()
+                .attribute("directories", ids)
+                .attribute("full", false)
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<UUID, FileDirectoryCompactDto>>() {});
+    }
+
+    public Map<UUID, FileDirectoryFullDto> populateDirectoriesFull(List<UUID> ids) {
+        return fsRestClient.get()
+                .attribute("directories", ids)
+                .attribute("full", true)
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<UUID, FileDirectoryFullDto>>() {});
+    }
+
+    public void deleteDirectory(UUID directoryId) {
+        log.info("deleting " + directoryId);
     }
 
 }

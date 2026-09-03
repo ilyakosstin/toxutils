@@ -7,6 +7,9 @@ import java.net.URI
  * For more details on building Java & JVM projects, please refer to https://docs.gradle.org/9.7.0/userguide/building_java_projects.html in the Gradle documentation.
  */
 
+group = "ru.coffeetox"
+version = "1.2"
+
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
@@ -50,6 +53,12 @@ java {
 }
 
 publishing {
+    publications {
+        create<MavenPublication>("gpr") {
+            artifactId = "toxutils"
+            from(components["java"])
+        }
+    }
     repositories {
         maven {
             name = "GitHubPackages"
