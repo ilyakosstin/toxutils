@@ -55,8 +55,10 @@ java {
 publishing {
     publications {
         create<MavenPublication>("gpr") {
-            artifactId = "toxutils"
             from(components["java"])
+            groupId = "ru.coffeetox"
+            artifactId = "toxutils"
+            version = "1.2"
         }
     }
     repositories {

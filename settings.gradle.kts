@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "toxutils"
-include("lib")
+include("src")
