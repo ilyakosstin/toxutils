@@ -58,7 +58,7 @@ publishing {
             from(components["java"])
             groupId = "ru.coffeetox"
             artifactId = "toxutils"
-            version = "1.2"
+            version = "1.3"
         }
     }
     repositories {
